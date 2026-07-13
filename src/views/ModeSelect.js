@@ -41,8 +41,8 @@ const ModeSelect = {
       this.searchError = '';
       
       try {
-        const schoolSnap = await db.collection('schools').get();
-        const registeredSchools = schoolSnap.docs.map(doc => ({
+        const Snap = await db.collection('s').get();
+        const registereds = Snap.docs.map(doc => ({
           id: doc.id,
           name: doc.data().name,
           region: doc.data().address || '',
@@ -53,16 +53,16 @@ const ModeSelect = {
         }));
 
         const keyword = this.normalizeText(query);
-        const matchedAdminSchools = registeredSchools.filter(s =>
+        const matchedAdmins = registereds.filter(s =>
           this.normalizeText(s.name).includes(keyword) || this.normalizeText(s.address).includes(keyword)
         );
 
-        const url = `http://localhost:8080/api/schools/search?keyword=${encodeURIComponent(query)}`;
+        const response = await fetch(`https://planhub-lulh.onrender.com/api/schools/search?keyword=${keyword}`);
         const res = await fetch(url);
         if (!res.ok) throw new Error('서버 응답에 실패했습니다.');
 
         const data = await res.json();
-        const publicResults = data.schoolInfo ? data.schoolInfo[1].row.map(s => ({
+        const publicResults = data.Info ? data.Info[1].row.map(s => ({
           id: s.SD_SCHUL_CODE,
           name: s.SCHUL_NM,
           region: s.LCTN_SC_NM,
