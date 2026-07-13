@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>플랜 허브 | Plan Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <!-- Pretendard: Korean UI body face (cleaner metrics for product UI than Noto Sans KR) -->
+  <link rel="stylesheet" as="style" crossorigin
+    href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
+  <!-- Space Grotesk: structural display face for headings (replaces DM Serif Display) -->
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="src/assets/main.css">
+</head>
+<body>
+  <div id="app"></div>
+
+  <!-- 1. Firebase CDN -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+  <!-- 2. Vue CDN -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="https://unpkg.com/vue-router@4/dist/vue-router.global.js"></script>
+
+  <!-- 2.5. FullCalendar CDN (core + interaction + daygrid + timegrid + list, 번들 1개) -->
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.21/index.global.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.21/locales/ko.global.min.js"></script>
+
+  <!-- 2.6. Apache ECharts CDN (관리자 대시보드 차트) -->
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+
+  <!-- 3. 앱 설정 -->
+  <script src="src/config.js"></script>
+  <script src="src/store/mode.js"></script>
+  <script src="src/store/assessments.js"></script>
+
+  <!-- 4. 컴포넌트 -->
+  <script src="src/components/ChatModal.js"></script>
+  <script src="src/components/AppHeader.js"></script>
+  <script src="src/components/CalendarGrid.js"></script>
+  <script src="src/components/ScheduleCard.js"></script>
+  <script src="src/components/ConflictBadge.js"></script>
+  <script src="src/utils/assessmentConflict.js"></script>
+
+<!-- 5. 뷰 -->
+<script src="src/views/ModeSelect.js"></script>
+<script src="src/views/TeacherAuth.js"></script>
+<script src="src/views/StudentAuth.js"></script>
+<script src="src/views/Dashboard.js"></script>
+<script src="src/views/TeacherPanel.js"></script>
+<script src="src/views/StudentPanel.js"></script>
+<script src="src/views/AdminPanel.js"></script>
+<script src="src/views/TimetableTab.js"></script>
+<script src="src/views/MealTab.js"></script>
+<script src="src/views/CalendarView.js"></script>
+
+<!-- 6. 라우터 & 앱 -->
+<script src="src/router/index.js"></script>
+<script src="src/main.js"></script>
+</body>
+</html>
