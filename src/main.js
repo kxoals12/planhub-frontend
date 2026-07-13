@@ -1,5 +1,13 @@
+import { createApp } from 'vue'
+import App from './App.vue'
+import axios from 'axios'
+
+
+
 // src/main.js
 const { createApp } = Vue;
+
+axios.defaults.baseURL = 'https://planhub-lulh.onrender.com'
 
 const App = {
   name: 'App',
