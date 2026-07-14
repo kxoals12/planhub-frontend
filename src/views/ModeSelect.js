@@ -52,12 +52,13 @@ const ModeSelect = {
           subscribed: this.isPaidPlan(doc.data().plan),
         }));
 
-        const keyword = this.normalizeText(query);
+        const keyword = this.normalizeText(query);        // 로컬 비교 전용 (자모 분해되어도 무방)
         const matchedAdminSchools = registeredSchools.filter(s =>
           this.normalizeText(s.name).includes(keyword) || this.normalizeText(s.address).includes(keyword)
         );
 
-        const res = await fetch(`https://planhub-lulh.onrender.com/api/schools/search?keyword=${keyword}`);
+        // NEIS API로 보내는 검색어는 원본 그대로! 정규화하면 한글이 깨집니다.
+        const res = await fetch(`https://planhub-lulh.onrender.com/api/schools/search?keyword=${encodeURIComponent(query)}`);
         if (!res.ok) throw new Error('서버 응답에 실패했습니다.');
 
         const data = await res.json();
