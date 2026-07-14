@@ -220,7 +220,7 @@ const StudentPanel = {
               <div style="width:4px;border-radius:4px;align-self:stretch;flex-shrink:0" :style="{ background: subjectColor(s.subject) }"></div>
               <div style="flex:1;min-width:0">
                 <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-                  <span class="badge" :class="ddayClass(s.date)">{{ ddayLabel(s.date) }}</span>
+                  <span class="badge" :class="urgencyClass(ddayNum(s.date))">{{ ddayLabel(s.date) }}</span>
                   <span style="font-weight:700;color:var(--navy);font-size:0.95rem">{{ s.classRoom }}</span>
                   <span v-if="s.conflict" style="font-size:0.72rem;color:#FF5F47;font-weight:600">⚠ 충돌</span>
                 </div>
