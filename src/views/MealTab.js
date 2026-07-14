@@ -98,7 +98,7 @@ const MealTab = {
       const date = this.toYMD(this.selectedDate);
       try {
         const res = await fetch(
-          `http://localhost:8080/api/meal?officeCode=${school.officeCode}&schoolCode=${school.schoolCode}&date=${date}&mealType=${mealType}`
+          `https://planhub-lulh.onrender.com/api/meal?officeCode=${school.officeCode}&schoolCode=${school.schoolCode}&date=${date}&mealType=${mealType}`
         );
         if (!res.ok) throw new Error('서버 오류');
         const json = await res.json();
