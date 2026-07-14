@@ -152,7 +152,7 @@ const TimetableTab = {
       const to = this.toYMD(this.weekDates[4].date);
       try {
         const res = await fetch(
-          `http://localhost:8080/api/timetable?officeCode=${school.officeCode}&schoolCode=${school.schoolCode}&grade=${this.grade}&classNm=${this.classNm}&fromDate=${from}&toDate=${to}`
+          `https://planhub-lulh.onrender.com/api/timetable?officeCode=${school.officeCode}&schoolCode=${school.schoolCode}&grade=${this.grade}&classNm=${this.classNm}&fromDate=${from}&toDate=${to}`
         );
         if (!res.ok) throw new Error('서버 오류');
         const json = await res.json();
