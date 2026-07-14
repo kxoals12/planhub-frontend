@@ -1,4 +1,3 @@
-// src/views/ModeSelect.js
 const ModeSelect = {
   name: 'ModeSelect',
   inject: ['modeState'],
@@ -11,16 +10,16 @@ const ModeSelect = {
       adminLoading: false,
       searchQuery: '',
       selectedSchool: null,
-      schools: [],          // 💡 [변경] 가짜 데이터 대신, 백엔드에서 받아온 실시간 학교 목록이 들어갑니다.
-      searchLoading: false, // 💡 로딩 상태 추가
-      searchError: '',      // 💡 에러 메시지 상태 추가
+      schools: [],          // 백엔드에서 받아온 실시간 학교 목록
+      searchLoading: false, // 로딩 상태 추가
+      searchError: '',      // 에러 메시지 상태 추가
       paymentLoading: false,
       paymentDone: false,
     };
   },
   computed: {
     filteredSchools() {
-      // 💡 백엔드가 검색어에 맞는 결과만 이미 정제해서 주기 때문에, 
+      // 백엔드가 검색어에 맞는 결과만 이미 정제해서 주기 때문에, 
       // 필터링 없이 그대로 schools를 반환해 줍니다.
       return this.schools;
     },
@@ -75,84 +74,11 @@ const ModeSelect = {
         const merged = [];
         const seen = new Set();
 
-        [...publicResults, ...matchedAdminSchools].forEach(item => {
-          const key = this.normalizeText(item.name);
-          if (!key || seen.has(key)) return;
-          seen.add(key);
-
-          const adminMatch = registeredSchools.find(s => this.normalizeText(s.name) === key);
-          merged.push({
-            ...item,
-            id: item.id || adminMatch?.id,
-            name: item.name || adminMatch?.name,
-            region: item.region || adminMatch?.region || adminMatch?.address || '',
-            address: item.address || adminMatch?.address || '',
-            plan: adminMatch?.plan || '무료',
-            status: adminMatch?.status || '활성',
-            subscribed: Boolean(adminMatch?.subscribed),
-          });
-        });
-
-        this.schools = merged.filter(item =>
-          this.normalizeText(item.name).includes(keyword) || this.normalizeText(item.address).includes(keyword)
-        );
-      } catch (err) {
-        console.error(err);
-        this.searchError = '학교 목록을 불러오는 중 오류가 발생했습니다.';
-      } finally {
-        this.searchLoading = false;
-      }
-    },
-
-    async searchSchools() {
-      const query = this.searchQuery.trim();
-      if (!query) { this.schools = []; return; }
-      
-      this.searchLoading = true;
-      this.searchError = '';
-      
-      try {
-        const Snap = await db.collection('s').get();
-        const registereds = Snap.docs.map(doc => ({
-          id: doc.id,
-          name: doc.data().name,
-          region: doc.data().address || '',
-          address: doc.data().address || '',
-          plan: doc.data().plan || '무료',
-          status: doc.data().status || '활성',
-          subscribed: this.isPaidPlan(doc.data().plan),
-        }));
-
-        const keyword = this.normalizeText(query);
-        const matchedAdmins = registereds.filter(s =>
-          this.normalizeText(s.name).includes(keyword) || this.normalizeText(s.address).includes(keyword)
-        );
-
-        const url = `https://planhub-lulh.onrender.com/api/schools/search?keyword=${keyword}`;
-        const res = await fetch(url);
-        if (!res.ok) throw new Error('서버 응답에 실패했습니다.');
-
-        const data = await res.json();
-        const publicResults = data.Info ? data.Info[1].row.map(s => ({
-          id: s.SD_SCHUL_CODE,
-          name: s.SCHUL_NM,
-          region: s.LCTN_SC_NM,
-          address: s.ORG_RDNMA,
-          schoolCode: s.SD_SCHUL_CODE,
-          officeCode: s.ATPT_OFCDC_SC_CODE,
-          subscribed: false,
-        })) : [];
-
-        const merged = [];
-        const seen = new Set();
-
-        // 🔓 [수정] matchedAdminSchools -> matchedAdmins 로 변경!
         [...publicResults, ...matchedAdmins].forEach(item => {
           const key = this.normalizeText(item.name);
           if (!key || seen.has(key)) return;
           seen.add(key);
 
-          // 🔓 [수정] registeredSchools -> registereds 로 변경!
           const adminMatch = registereds.find(s => this.normalizeText(s.name) === key);
           merged.push({
             ...item,
@@ -176,6 +102,48 @@ const ModeSelect = {
         this.searchLoading = false;
       }
     },
+
+    selectSchool(school) {
+      this.selectedSchool = school;
+      if (typeof setSchool === 'function') {
+        setSchool(school); // 전역 modeState에 저장
+      }
+      if (school.subscribed || this.paymentDone) this.step = 'role-select';
+      else this.step = 'payment';
+    },
+    doPayment() {
+      this.paymentLoading = true;
+      setTimeout(() => {
+        this.paymentDone = true;
+        this.paymentLoading = false;
+        setTimeout(() => { this.step = 'role-select'; }, 1000);
+      }, 1200);
+    },
+    selectTeacher() { this.$router.push('/teacher-auth'); },
+    selectStudent()  { this.$router.push('/student-auth'); },
+    openAdminModal() {
+      this.showAdminModal = true; this.adminPw = ''; this.adminError = '';
+      this.$nextTick(() => { if (this.$refs.pwInput) this.$refs.pwInput.focus(); });
+    },
+    closeAdminModal() { this.showAdminModal = false; },
+    submitAdmin() {
+      if (!this.adminPw) { this.adminError = '비밀번호를 입력해주세요.'; return; }
+      this.adminLoading = true;
+      setTimeout(() => {
+        if (typeof checkAdminPassword === 'function' && checkAdminPassword(this.adminPw)) { 
+          if (typeof setMode === 'function') setMode('admin'); 
+          this.$router.push('/admin'); 
+        }
+        else { this.adminError = '비밀번호가 올바르지 않습니다.'; this.adminPw = ''; }
+        this.adminLoading = false;
+      }, 400);
+    },
+    goBack() {
+      if (this.step === 'role-select') { this.step = 'school-search'; this.paymentDone = false; }
+      else if (this.step === 'payment') { this.step = 'school-search'; }
+      else if (this.step === 'school-search') { this.step = 'root'; this.searchQuery = ''; this.schools = []; this.selectedSchool = null; }
+    },
+  },
   template: `
     <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--cream);padding:24px">
 
@@ -316,3 +284,6 @@ const ModeSelect = {
     </div>
   `,
 };
+
+// 만약 빌드 시스템이 ES Module(import/export) 방식을 쓴다면 하단 주석을 해제하세요.
+// export default ModeSelect;
