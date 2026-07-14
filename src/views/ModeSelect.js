@@ -1,3 +1,4 @@
+// src/views/ModeSelect.js
 const ModeSelect = {
   name: 'ModeSelect',
   inject: ['modeState'],
@@ -10,16 +11,17 @@ const ModeSelect = {
       adminLoading: false,
       searchQuery: '',
       selectedSchool: null,
-      schools: [],          // 백엔드에서 받아온 실시간 학교 목록
-      searchLoading: false, // 로딩 상태
-      searchError: '',      // 에러 메시지 상태
+      schools: [],          // 💡 [변경] 가짜 데이터 대신, 백엔드에서 받아온 실시간 학교 목록이 들어갑니다.
+      searchLoading: false, // 💡 로딩 상태 추가
+      searchError: '',      // 💡 에러 메시지 상태 추가
       paymentLoading: false,
       paymentDone: false,
     };
   },
   computed: {
     filteredSchools() {
-      // 백엔드가 검색어에 맞는 결과만 이미 정제해서 주기 때문에 필터링 없이 그대로 반환합니다.
+      // 💡 백엔드가 검색어에 맞는 결과만 이미 정제해서 주기 때문에, 
+      // 필터링 없이 그대로 schools를 반환해 줍니다.
       return this.schools;
     },
   },
@@ -29,8 +31,7 @@ const ModeSelect = {
       return String(plan).trim() !== '무료' && String(plan).trim().toLowerCase() !== 'free';
     },
     normalizeText(value) {
-      // 💡 [수정] 한글 자모가 쪼개지는 NFKD를 제거하고, 순수 공백 및 대소문자만 정제하도록 변경했습니다.
-      return String(value || '').toLowerCase().trim();
+      return String(value || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').trim();
     },
     async searchSchools() {
       const query = this.searchQuery.trim();
@@ -40,9 +41,8 @@ const ModeSelect = {
       this.searchError = '';
       
       try {
-        // 1. 파이어베이스에서 등록된 학교 목록 가져오기
-        const Snap = await db.collection('s').get();
-        const registereds = Snap.docs.map(doc => ({
+        const schoolSnap = await db.collection('schools').get();
+        const registeredSchools = schoolSnap.docs.map(doc => ({
           id: doc.id,
           name: doc.data().name,
           region: doc.data().address || '',
@@ -53,53 +53,33 @@ const ModeSelect = {
         }));
 
         const keyword = this.normalizeText(query);
-        const matchedAdmins = registereds.filter(s =>
+        const matchedAdminSchools = registeredSchools.filter(s =>
           this.normalizeText(s.name).includes(keyword) || this.normalizeText(s.address).includes(keyword)
         );
 
-        // 2. 백엔드 API 호출 (💡 쪼개지지 않은 원본 query를 인코딩해서 안전하게 전달합니다)
-        const url = `https://planhub-lulh.onrender.com/api/schools/search?keyword=${encodeURIComponent(query)}`;
-        const res = await fetch(url);
+        const res = await fetch(`https://planhub-lulh.onrender.com/api/schools/search?keyword=${keyword}`);
         if (!res.ok) throw new Error('서버 응답에 실패했습니다.');
 
         const data = await res.json();
-        
-        // 3. 백엔드 응답 포맷 유연한 예외 처리 (정제된 배열 vs 나이스 원본 포맷 둘 다 대응 가능)
-        let publicResults = [];
-        if (data && Array.isArray(data)) {
-          // Case A: 백엔드에서 이미 깔끔한 List/Array 형태로 정제해서 주는 경우
-          publicResults = data.map(s => ({
-            id: s.schoolCode || s.id || s.SD_SCHUL_CODE || String(Math.random()),
-            name: s.schoolName || s.name || s.SCHUL_NM,
-            region: s.region || s.LCTN_SC_NM || '',
-            address: s.address || s.ORG_RDNMA || '',
-            schoolCode: s.schoolCode || s.SD_SCHUL_CODE,
-            officeCode: s.officeCode || s.ATPT_OFCDC_SC_CODE,
-            subscribed: false,
-          }));
-        } else if (data && data.Info && data.Info[1] && data.Info[1].row) {
-          // Case B: 백엔드가 공공 API(나이스) 원본 객체를 그대로 리턴하는 경우
-          publicResults = data.Info[1].row.map(s => ({
-            id: s.SD_SCHUL_CODE,
-            name: s.SCHUL_NM,
-            region: s.LCTN_SC_NM,
-            address: s.ORG_RDNMA,
-            schoolCode: s.SD_SCHUL_CODE,
-            officeCode: s.ATPT_OFCDC_SC_CODE,
-            subscribed: false,
-          }));
-        }
+        const publicResults = data.schoolInfo ? data.schoolInfo[1].row.map(s => ({
+          id: s.SD_SCHUL_CODE,
+          name: s.SCHUL_NM,
+          region: s.LCTN_SC_NM,
+          address: s.ORG_RDNMA,
+          schoolCode: s.SD_SCHUL_CODE,
+          officeCode: s.ATPT_OFCDC_SC_CODE,
+          subscribed: false,
+        })) : [];
 
-        // 4. 공공 데이터와 파이어베이스 데이터 중복 제거 병합
         const merged = [];
         const seen = new Set();
 
-        [...publicResults, ...matchedAdmins].forEach(item => {
+        [...publicResults, ...matchedAdminSchools].forEach(item => {
           const key = this.normalizeText(item.name);
           if (!key || seen.has(key)) return;
           seen.add(key);
 
-          const adminMatch = registereds.find(s => this.normalizeText(s.name) === key);
+          const adminMatch = registeredSchools.find(s => this.normalizeText(s.name) === key);
           merged.push({
             ...item,
             id: item.id || adminMatch?.id,
@@ -112,7 +92,6 @@ const ModeSelect = {
           });
         });
 
-        // 5. 최종 검색어 필터링 적용 후 바인딩
         this.schools = merged.filter(item =>
           this.normalizeText(item.name).includes(keyword) || this.normalizeText(item.address).includes(keyword)
         );
@@ -126,9 +105,7 @@ const ModeSelect = {
 
     selectSchool(school) {
       this.selectedSchool = school;
-      if (typeof setSchool === 'function') {
-        setSchool(school); // 전역 modeState에 저장
-      }
+      setSchool(school); // 전역 modeState에 저장
       if (school.subscribed || this.paymentDone) this.step = 'role-select';
       else this.step = 'payment';
     },
