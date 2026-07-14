@@ -57,7 +57,7 @@ const ModeSelect = {
           this.normalizeText(s.name).includes(keyword) || this.normalizeText(s.address).includes(keyword)
         );
 
-        const response = await fetch(`https://planhub-lulh.onrender.com/api/schools/search?keyword=${keyword}`);
+        const url = `https://planhub-lulh.onrender.com/api/schools/search?keyword=${keyword}`;
         const res = await fetch(url);
         if (!res.ok) throw new Error('서버 응답에 실패했습니다.');
 
